@@ -142,7 +142,7 @@ xcode-select --install
 
 **Warning Dialogs**: When running a Full Sync, if files will be replaced or deleted, you'll see a warning dialog listing the affected files. This gives you a chance to back up any custom textures to the `user-customs` folder before proceeding.
 
-<img src="assets/screenshot-warning.jpg" alt="Screenshot of file deletion warning." width="400">
+<img src="assets/screenshot-warning.png" alt="Screenshot of file deletion warning." width="400">
 
 #### GitHub API Token (Required for Sync)
 
