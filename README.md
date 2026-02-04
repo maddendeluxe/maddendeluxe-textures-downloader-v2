@@ -58,7 +58,7 @@ Both modes will:
 
 After every sync, the app performs a quick file count verification to ensure your local installation matches the repository. If a mismatch is detected, you'll be prompted to run a Full Sync to resolve discrepancies.
 
-<img src="assets/screenshot-verification.jpg" alt="Screenshot of post-sync verification." width="400">
+<img src="assets/screenshot-verification.png" alt="Screenshot of post-sync verification." width="400">
 
 ---
 
@@ -127,7 +127,7 @@ The installer uses Git sparse checkout to efficiently download only the texture 
 xcode-select --install
 ```
 
-<img src="assets/screenshot-installdone.jpg" alt="Screenshot of installation complete screen." width="400">
+<img src="assets/screenshot-installdone.png" alt="Screenshot of installation complete screen." width="400">
 
 ### Updating and Syncing <a name="usage--sync">
 
