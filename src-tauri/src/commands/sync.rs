@@ -285,10 +285,14 @@ fn cleanup_empty_directories_recursive(dir: &Path, is_root: bool, window: &Windo
     removed
 }
 
-/// Check if a path should be skipped (user-customs folder or hidden files)
+/// Check if a path should be skipped (user-customs folder, JSGME, or hidden files)
 fn should_skip_path(path: &str) -> bool {
     // Skip user-customs folder
     if path.contains("user-customs") {
+        return true;
+    }
+    // Skip anything related to JSGME
+    if path.contains("JSGME") {
         return true;
     }
     // Skip hidden files/directories (starting with .)
