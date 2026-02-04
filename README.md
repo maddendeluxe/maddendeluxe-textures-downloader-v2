@@ -58,7 +58,7 @@ Both modes will:
 
 After every sync, the app performs a quick file count verification to ensure your local installation matches the repository. If a mismatch is detected, you'll be prompted to run a Full Sync to resolve discrepancies.
 
-<img src="assets/screenshot-verification.jpg" alt="Screenshot of post-sync verification." width="400">
+<img src="assets/screenshot-verification.png" alt="Screenshot of post-sync verification." width="400">
 
 ---
 
@@ -127,7 +127,7 @@ The installer uses Git sparse checkout to efficiently download only the texture 
 xcode-select --install
 ```
 
-<img src="assets/screenshot-installdone.jpg" alt="Screenshot of installation complete screen." width="400">
+<img src="assets/screenshot-installdone.png" alt="Screenshot of installation complete screen." width="400">
 
 ### Updating and Syncing <a name="usage--sync">
 
@@ -142,7 +142,7 @@ xcode-select --install
 
 **Warning Dialogs**: When running a Full Sync, if files will be replaced or deleted, you'll see a warning dialog listing the affected files. This gives you a chance to back up any custom textures to the `user-customs` folder before proceeding.
 
-<img src="assets/screenshot-warning.jpg" alt="Screenshot of file deletion warning." width="400">
+<img src="assets/screenshot-warning.png" alt="Screenshot of file deletion warning." width="400">
 
 #### GitHub API Token (Required for Sync)
 
