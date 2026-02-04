@@ -4,22 +4,22 @@
 
 /// Application title (also update in tauri.conf.json and frontend/config.ts)
 #[allow(dead_code)]
-pub const APP_TITLE: &str = "Madden 09 Deluxe Downloader";
+pub const APP_TITLE: &str = "Madden 12 Deluxe Downloader";
 
 /// Repository owner (GitHub username or organization)
 pub const REPO_OWNER: &str = "maddendeluxe";
 
 /// Name of the texture mod repository
-pub const REPO_NAME: &str = "madden09deluxe";
+pub const REPO_NAME: &str = "madden12deluxe";
 
 /// Full URL to the git repository
-pub const REPO_URL: &str = "https://github.com/maddendeluxe/madden09deluxe.git";
+pub const REPO_URL: &str = "https://github.com/maddendeluxe/madden12deluxe.git";
 
 /// The target folder name (typically the PS2 game identifier like SLUS-XXXXX)
-pub const SLUS_FOLDER: &str = "SLUS-21770";
+pub const SLUS_FOLDER: &str = "SLUS-21946";
 
 /// Path within the repo to sparse checkout
-pub const SPARSE_PATH: &str = "textures/SLUS-21770";
+pub const SPARSE_PATH: &str = "textures/SLUS-21946";
 
 /// Temporary directory name used during clone
-pub const TEMP_DIR_NAME: &str = "_temp_madden09deluxe_repo";
+pub const TEMP_DIR_NAME: &str = "_temp_madden12deluxe_repo";
