@@ -5,6 +5,8 @@ This is a tool to download Madden 09 & Madden 12 Deluxe Texture Installers Built
 | Files  | Link |
 | ------------- | ------------- |
 | Madden 09 & 12 Deluxe Tool | [Link](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/tag/release) |
+| Madden 09 Deluxe | [Link](https://github.com/maddendeluxe/madden09deluxe) |
+| Madden 12 Deluxe | [Link](https://github.com/maddendeluxe/madden12deluxe) |
 
 ## Table of Contents
 - [Features](#features)
