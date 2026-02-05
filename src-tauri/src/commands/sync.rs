@@ -291,14 +291,14 @@ fn should_skip_path(path: &str) -> bool {
     if path.contains("user-customs") {
         return true;
     }
-    // Skip anything related to JSGME
-    if path.contains("jsgme") {
-        return true;
-    }
     // Skip anything related to MODS
     if path.contains("MODS") {
         return true;
-    }	
+    }		
+    // Skip anything related to JSGME
+    if path.contains("JSGME") {
+        return true;
+    }
     // Skip hidden files/directories (starting with .)
     for component in path.split('/') {
         if component.starts_with('.') {
