@@ -1,7 +1,7 @@
 [package]
-name = "madden12-textures-downloader"
+name = "madden09deluxe-textures-downloader"
 version = "2.0.0"
-description = "Madden 12 Texture Downloader"
+description = "Madden 09 Deluxe Downloader - Download and sync Madden 09 Deluxe texture packs"
 authors = ["JD6-37"]
 edition = "2021"
 
