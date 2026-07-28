@@ -51,7 +51,7 @@ function DirectoryPicker({ value, onChange, disabled }: DirectoryPickerProps) {
         </button>
       </div>
       <p className="mt-1 text-xs text-zinc-500">
-        Example: C:\PCSX2\textures or ~/Library/Application Support/PCSX2/textures
+        Example: C:\Games\Madden 09 Deluxe\Textures or ~/Library/Application Support/PCSX2/textures
       </p>
     </div>
   );

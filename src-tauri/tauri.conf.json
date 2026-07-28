@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Madden 05 Deluxe Downloader",
+  "productName": "Madden 09 Deluxe Downloader",
   "version": "2.0.0",
-  "identifier": "com.madden05deluxe.textures-downloader",
+  "identifier": "com.madden09deluxe.textures-downloader",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Madden 05 Deluxe Downloader",
+        "title": "Madden 09 Deluxe Downloader",
         "width": 600,
         "height": 700,
         "minWidth": 500,
