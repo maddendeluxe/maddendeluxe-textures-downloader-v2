@@ -1,25 +1,13 @@
-// Configurable constants for the PS2 Textures Downloader
-// Modify these values to adapt this app for other PS2 texture mod projects
-// Note: Also update frontend/config.ts to match these values
-
-/// Application title (also update in tauri.conf.json and frontend/config.ts)
-#[allow(dead_code)]
-pub const APP_TITLE: &str = "Madden 05 Deluxe Downloader";
-
-/// Repository owner (GitHub username or organization)
-pub const REPO_OWNER: &str = "maddendeluxe";
-
-/// Name of the texture mod repository
-pub const REPO_NAME: &str = "madden05deluxe";
-
-/// Full URL to the git repository
-pub const REPO_URL: &str = "https://github.com/maddendeluxe/madden05deluxe.git";
-
-/// The target folder name (typically the PS2 game identifier like SLUS-XXXXX)
-pub const SLUS_FOLDER: &str = "SLUS-21000";
-
-/// Path within the repo to sparse checkout
-pub const SPARSE_PATH: &str = "textures/SLUS-21000";
-
-/// Temporary directory name used during clone
-pub const TEMP_DIR_NAME: &str = "_temp_madden05deluxe_repo";
+// Per-game constants for the PS2 Textures Downloader.
+//
+// They are NOT edited here. `build.rs` generates them from `games/<GAME>/game.json`,
+// where GAME is the environment variable that picks the loader (default `madden09`):
+//
+//     GAME=madden12 npx tauri build --config games/madden12/tauri.conf.json
+//
+// Adding a game means adding a folder under games/, never touching this file.
+// The frontend reads the same manifest through vite.config.ts.
+//
+// Generated: GAME_ID, APP_TITLE, REPO_OWNER, REPO_NAME, REPO_URL, SLUS_FOLDER,
+// SPARSE_PATH, TEMP_DIR_NAME.
+include!(concat!(env!("OUT_DIR"), "/game_config.rs"));

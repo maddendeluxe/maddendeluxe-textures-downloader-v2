@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+#
+# @SHORT_NAME@ - first-time texture installer for Linux and macOS.
+#
+# Generated from src/download_textures.sh.in by tools/games.py render; the game
+# comes from games/<id>/game.json. Edit the template, never a rendered copy.
+#
+# Downloads only the @SPARSE_PATH@ folder from the mod repository with a
+# git sparse checkout (no multi-GB zip) and places it in your PCSX2 textures
+# folder. It is the command-line equivalent of the app's "Install" tab.
+#
+# Usage:
+#   ./download_textures.sh [PCSX2_TEXTURES_DIR]
+#
+# With no argument, textures are installed next to this script, so the simplest
+# way to use it is to copy it into your PCSX2 textures folder and run it there.
+#
+# For later updates use the @TITLE@ app (Sync tab).
+
+set -euo pipefail
+
+REPO_URL="${REPO_URL:-@REPO_URL@}"
+SPARSE_PATH="${SPARSE_PATH:-@SPARSE_PATH@}"
+TARGET_FOLDER="$(basename "$SPARSE_PATH")"
+TEMP_REPO="@TEMP_DIR_NAME@"
+
+pause_and_exit() {
+    # Keep the window open when launched by double-click from a file manager.
+    if [ -t 0 ]; then
+        read -rp "Press Enter to exit..."
+    fi
+    exit "$1"
+}
+
+echo "==============================="
+echo "@SHORT_NAME@ Textures Downloader"
+echo "==============================="
+echo
+
+# --- Where to install -------------------------------------------------------
+if [ $# -ge 1 ]; then
+    TEXTURES_DIR="$1"
+else
+    TEXTURES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
+
+if [ ! -d "$TEXTURES_DIR" ]; then
+    echo "ERROR: textures folder does not exist: $TEXTURES_DIR"
+    pause_and_exit 1
+fi
+cd "$TEXTURES_DIR"
+
+echo "Textures installation directory:"
+echo "  $TEXTURES_DIR"
+echo
+
+# --- Check for git ----------------------------------------------------------
+if ! command -v git >/dev/null 2>&1; then
+    echo "Git is not installed."
+    case "$(uname -s)" in
+        Darwin)
+            echo "Run this in Terminal, then re-run this script:"
+            echo "  xcode-select --install"
+            ;;
+        *)
+            echo "Install it with your package manager, then re-run this script:"
+            if command -v apt-get >/dev/null 2>&1; then echo "  sudo apt install git"
+            elif command -v dnf >/dev/null 2>&1; then echo "  sudo dnf install git"
+            elif command -v pacman >/dev/null 2>&1; then echo "  sudo pacman -S git"
+            elif command -v zypper >/dev/null 2>&1; then echo "  sudo zypper install git"
+            else echo "  (see https://git-scm.com/downloads)"
+            fi
+            ;;
+    esac
+    pause_and_exit 1
+fi
+
+# --- Refuse to clobber an existing install ----------------------------------
+if [ -e "$TARGET_FOLDER" ]; then
+    echo "WARNING: a '$TARGET_FOLDER' folder already exists here."
+    echo "Delete or rename it and run this script again, or use the app's Sync tab to update it."
+    pause_and_exit 1
+fi
+
+# --- Clone ------------------------------------------------------------------
+cleanup() { rm -rf "$TEMP_REPO"; }
+trap cleanup EXIT
+
+cleanup
+echo "Setting up temporary repository..."
+git clone --depth=1 --filter=blob:none --sparse --progress "$REPO_URL" "$TEMP_REPO"
+
+echo
+echo "Downloading $SPARSE_PATH (this is the big part)..."
+git -C "$TEMP_REPO" sparse-checkout set "$SPARSE_PATH"
+
+if [ ! -d "$TEMP_REPO/$SPARSE_PATH" ]; then
+    echo "ERROR: $SPARSE_PATH was not found in the repository after checkout."
+    pause_and_exit 1
+fi
+
+echo
+echo "Moving folder into final location..."
+mv "$TEMP_REPO/$SPARSE_PATH" "$TARGET_FOLDER"
+
+echo "Cleaning up..."
+cleanup
+trap - EXIT
+
+echo
+echo "==============================="
+echo "Done! Textures installed at:"
+echo "  $TEXTURES_DIR/$TARGET_FOLDER"
+echo
+echo "Make sure that path matches PCSX2 > Settings > Graphics > Texture Replacements."
+echo "For future updates, use the @TITLE@ app (Sync tab)."
+echo "==============================="
+pause_and_exit 0

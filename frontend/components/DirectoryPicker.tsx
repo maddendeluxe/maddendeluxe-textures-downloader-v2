@@ -1,4 +1,5 @@
 import { open } from "@tauri-apps/plugin-dialog";
+import { EXAMPLE_PATH } from "../config";
 
 interface DirectoryPickerProps {
   value: string;
@@ -51,7 +52,7 @@ function DirectoryPicker({ value, onChange, disabled }: DirectoryPickerProps) {
         </button>
       </div>
       <p className="mt-1 text-xs text-zinc-500">
-        Example: C:\Games\Madden 05 Deluxe\Textures or ~/Library/Application Support/PCSX2/textures
+        Example: {EXAMPLE_PATH} or ~/Library/Application Support/PCSX2/textures
       </p>
     </div>
   );

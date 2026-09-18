@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Madden 04 Deluxe Downloader",
+  "mainBinaryName": "Madden04DeluxeDownloader",
+  "identifier": "com.madden04deluxe.textures-downloader",
+  "app": {
+    "windows": [
+      {
+        "title": "Madden 04 Deluxe Downloader",
+        "width": 600,
+        "height": 700,
+        "minWidth": 500,
+        "minHeight": 600,
+        "resizable": true
+      }
+    ]
+  }
+}

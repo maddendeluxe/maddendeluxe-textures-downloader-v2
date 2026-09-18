@@ -1,0 +1,14 @@
+{
+  "id": "madden12",
+  "title": "Madden 12 Deluxe Downloader",
+  "shortName": "Madden 12 Deluxe",
+  "description": "Madden 12 Deluxe Downloader - Download and sync Madden 12 Deluxe texture packs",
+  "identifier": "com.madden12deluxe.textures-downloader",
+  "repoOwner": "maddendeluxe",
+  "repoName": "madden12deluxe",
+  "repoUrl": "https://github.com/maddendeluxe/madden12deluxe.git",
+  "slusFolder": "SLUS-21946",
+  "sparsePath": "textures/SLUS-21946",
+  "tempDirName": "_temp_madden12deluxe_repo",
+  "examplePath": "C:\\Games\\Madden 12 Deluxe\\Textures"
+}
