@@ -1,0 +1,24 @@
+# Build environment for the Linux bundles (AppImage/deb/rpm) of this app.
+# Mirrors the ubuntu-22.04 GitHub Actions job so a local build matches CI.
+#
+#   podman build -t tauri-linux-build:jammy -f tools/linux-build/Containerfile tools/linux-build
+#   tools/linux-build/build.sh            # runs the build in that image
+FROM docker.io/library/ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential curl wget file ca-certificates git pkg-config \
+        libssl-dev libgtk-3-dev libwebkit2gtk-4.1-dev \
+        libappindicator3-dev librsvg2-dev patchelf \
+        desktop-file-utils squashfs-tools xz-utils xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+# Node 22 (same as CI)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+# Rust stable, minimal profile, world-writable so --userns=keep-id users can use the cache
+ENV RUSTUP_HOME=/opt/rustup CARGO_HOME=/opt/cargo PATH=/opt/cargo/bin:$PATH
+RUN curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --no-modify-path \
+    && chmod -R a+rwX /opt/rustup /opt/cargo
+# AppImage tooling cannot mount FUSE inside a container; extract-and-run instead.
+ENV APPIMAGE_EXTRACT_AND_RUN=1
+WORKDIR /work

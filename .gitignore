@@ -98,3 +98,4 @@ bower_components
 .env.local
 .env.production
 .env.staging
+build-output/
