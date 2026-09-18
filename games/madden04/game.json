@@ -1,0 +1,14 @@
+{
+  "id": "madden04",
+  "title": "Madden 04 Deluxe Downloader",
+  "shortName": "Madden 04 Deluxe",
+  "description": "Madden 04 Deluxe Downloader - Download and sync Madden 04 Deluxe texture packs",
+  "identifier": "com.madden04deluxe.textures-downloader",
+  "repoOwner": "maddendeluxe",
+  "repoName": "madden04deluxe",
+  "repoUrl": "https://github.com/maddendeluxe/madden04deluxe.git",
+  "slusFolder": "SLUS-20752",
+  "sparsePath": "textures/SLUS-20752",
+  "tempDirName": "_temp_madden04deluxe_repo",
+  "examplePath": "C:\\Games\\Madden 04 Deluxe\\Textures"
+}

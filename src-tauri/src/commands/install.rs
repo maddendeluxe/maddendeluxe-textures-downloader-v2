@@ -27,7 +27,12 @@ pub fn cleanup_processes() {
             }
             #[cfg(not(target_os = "windows"))]
             {
-                // On Unix, kill the process group
+                // On Linux the runner gives the wrapper its own process group
+                // (see run_git_with_pty), so kill the group first; then the pid
+                // itself, which is all macOS's caffeinate needs.
+                let _ = Command::new("kill")
+                    .args(["-9", "--", &format!("-{}", pid)])
+                    .output();
                 let _ = Command::new("kill")
                     .args(["-9", &pid.to_string()])
                     .output();
@@ -46,7 +51,7 @@ pub struct ProgressPayload {
 /// Get the path to git executable
 /// On Windows x64, use bundled MinGit if available
 /// On Windows ARM, require system git
-/// On macOS, use system git
+/// On macOS and Linux, use system git
 fn get_git_path() -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
@@ -105,7 +110,13 @@ fn get_git_path() -> Result<String, String> {
             return Ok("git".to_string());
         }
 
-        Err("Git not found. Please install Xcode Command Line Tools by running: xcode-select --install".to_string())
+        #[cfg(target_os = "macos")]
+        let hint = "Please install Xcode Command Line Tools by running: xcode-select --install";
+        #[cfg(not(target_os = "macos"))]
+        let hint = "Please install it with your package manager (for example: sudo apt install git, \
+                    sudo dnf install git, or sudo pacman -S git) and then restart this app.";
+
+        Err(format!("Git not found. {}", hint))
     }
 }
 
@@ -261,12 +272,12 @@ fn read_output_with_progress<R: IoRead>(
     }
 }
 
-/// Run a git command with PTY support (using script command on macOS/Linux)
+/// Run a git command with PTY support (using the BSD `script` command on macOS)
 /// This ensures git outputs progress even when not connected to a real terminal
 /// Uses caffeinate to prevent system sleep during long operations
 /// When detect_stages is false, always uses default_stage instead of detecting from output
 /// Returns Ok(true) on success, Ok(false) on failure with error details, or Err on spawn failure
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "macos")]
 fn run_git_with_pty(
     git_path: &str,
     args: &[&str],
@@ -300,6 +311,134 @@ fn run_git_with_pty(
     let status = cmd
         .wait()
         .map_err(|e| format!("Command failed: {}", e))?;
+
+    // Get recent output for error message
+    let error_context = recent_lines.lock()
+        .map(|lines| lines.join("\n"))
+        .unwrap_or_default();
+
+    Ok((status.success(), error_context))
+}
+
+/// Quote a string for use inside a POSIX shell command line
+#[cfg(target_os = "linux")]
+fn shell_quote(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "'\\''"))
+}
+
+/// Run a git command on Linux with PTY support.
+///
+/// util-linux `script -c <cmd>` gives git a pseudo-terminal so it prints live
+/// progress even though our stdout is a pipe (`-q` no banner, `-e` propagate
+/// git's exit status, `-f` flush as output arrives). When `systemd-inhibit` is
+/// usable it also stops the machine from sleeping mid-download. If `script`
+/// is not installed, git runs directly: it still works, just without live
+/// progress percentages.
+/// Returns Ok(true) on success, Ok(false) on failure with error details, or Err on spawn failure
+#[cfg(target_os = "linux")]
+fn run_git_with_pty(
+    git_path: &str,
+    args: &[&str],
+    working_dir: &PathBuf,
+    window: &Window,
+    default_stage: &str,
+    detect_stages: bool,
+) -> Result<(bool, String), String> {
+    let have_script = Command::new("script").arg("--version").output().is_ok();
+    // Probe by actually taking a lock: `--list` can succeed on systems where
+    // taking one is denied (containers, WSL, no logind session).
+    let have_inhibit = Command::new("systemd-inhibit")
+        .args(["--what=idle:sleep", "--who=Textures Downloader", "--why=probe", "true"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+
+    let git_cmdline = std::iter::once(git_path)
+        .chain(args.iter().copied())
+        .map(shell_quote)
+        .collect::<Vec<_>>()
+        .join(" ");
+    let script_args = ["-qefc", git_cmdline.as_str(), "/dev/null"];
+
+    let mut cmd = if have_script && have_inhibit {
+        let mut c = Command::new("systemd-inhibit");
+        c.args([
+            "--what=idle:sleep",
+            "--who=Textures Downloader",
+            "--why=Downloading textures",
+            "script",
+        ])
+        .args(script_args);
+        c
+    } else if have_script {
+        let mut c = Command::new("script");
+        c.args(script_args);
+        c
+    } else {
+        let mut c = Command::new(git_path);
+        c.args(args);
+        c
+    };
+
+    // Put the wrapper in its own process group so closing the app mid-download can
+    // kill the whole group at once. This fully cleans up the no-`script` fallback
+    // (git and its index-pack child). Note that `script` calls setsid() for the
+    // command it hosts, so in the PTY path the git it started lives in a separate
+    // session and can briefly outlive the app; the leftover temp directory is
+    // removed at the start of the next install either way.
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
+
+    let mut child = cmd
+        .current_dir(working_dir)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to start command: {}", e))?;
+
+    // Track the PID so the process can be killed if the app exits mid-download
+    if let Ok(mut pids) = RUNNING_PIDS.lock() {
+        pids.push(child.id());
+    }
+
+    // Collect recent output for error reporting
+    let recent_lines = Arc::new(Mutex::new(Vec::<String>::new()));
+
+    // `script` merges git's stderr (where progress goes) into the PTY, which we read
+    // from stdout; anything left on stderr is then the wrapper's own complaint, so
+    // keep it for the error report. Without `script`, git's progress and errors
+    // are on stderr.
+    if have_script {
+        let stderr_lines = recent_lines.clone();
+        let stderr_thread = child.stderr.take().map(|stderr| {
+            std::thread::spawn(move || {
+                use std::io::BufRead;
+                for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+                    if let Ok(mut lines) = stderr_lines.lock() {
+                        lines.push(line);
+                    }
+                }
+            })
+        });
+        if let Some(stdout) = child.stdout.take() {
+            read_output_with_progress(stdout, window, default_stage, detect_stages, Some(recent_lines.clone()));
+        }
+        if let Some(t) = stderr_thread {
+            let _ = t.join();
+        }
+    } else if let Some(stderr) = child.stderr.take() {
+        read_output_with_progress(stderr, window, default_stage, detect_stages, Some(recent_lines.clone()));
+    }
+
+    let status = child
+        .wait()
+        .map_err(|e| format!("Command failed: {}", e))?;
+
+    if let Ok(mut pids) = RUNNING_PIDS.lock() {
+        pids.retain(|&p| p != child.id());
+    }
 
     // Get recent output for error message
     let error_context = recent_lines.lock()
@@ -518,7 +657,7 @@ pub async fn start_installation(textures_dir: String, window: Window) -> Result<
             .map_err(|e| format!("Failed to clean temp directory: {}", e))?;
     }
 
-    // Create temp directory (only on macOS - on Windows, git clone will create it)
+    // Create temp directory (only on macOS/Linux - on Windows, git clone will create it)
     #[cfg(not(target_os = "windows"))]
     fs::create_dir_all(&temp_path)
         .map_err(|e| format!("Failed to create temp directory: {}", e))?;

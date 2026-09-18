@@ -1,12 +1,19 @@
 # Madden Deluxe Texture Downloader
 
-This is a tool to download Madden 09 & Madden 12 Deluxe Texture Installers Built with Tauri (Rust + React).
+This is a tool to download the Madden Deluxe texture packs, built with Tauri (Rust + React).
 
-| Files  | Link |
-| ------------- | ------------- |
-| Madden 09 & 12 Deluxe Tool | [Link](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/tag/release) |
-| Madden 09 Deluxe | [Link](https://github.com/maddendeluxe/madden09deluxe) |
-| Madden 12 Deluxe | [Link](https://github.com/maddendeluxe/madden12deluxe) |
+One codebase builds every loader. Each game is a folder under [`games/`](games/) holding
+the only strings that differ; `GAME` picks it at build time, so no file is ever edited to
+switch games and all of them can be built at once.
+
+| Loader | Texture repo | PS2 folder |
+| ------------- | ------------- | ------------- |
+| Madden 04 Deluxe | [madden04deluxe](https://github.com/maddendeluxe/madden04deluxe) | `SLUS-20752` |
+| Madden 05 Deluxe | [madden05deluxe](https://github.com/maddendeluxe/madden05deluxe) | `SLUS-21000` |
+| Madden 09 Deluxe | [madden09deluxe](https://github.com/maddendeluxe/madden09deluxe) | `SLUS-21770` |
+| Madden 12 Deluxe | [madden12deluxe](https://github.com/maddendeluxe/madden12deluxe) | `SLUS-21946` |
+
+Releases: [maddendeluxe-textures-downloader-v2](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/tag/release)
 
 ## Table of Contents
 - [Features](#features)
@@ -17,12 +24,13 @@ This is a tool to download Madden 09 & Madden 12 Deluxe Texture Installers Built
 - [Installation](#installation)
   - [Windows](#installation--windows)
   - [macOS](#installation--macos)
+  - [Linux](#installation--linux)
 - [Uninstalling](#uninstalling)
 - [Using the App](#usage)
   - [First Time Setup](#usage--setup)
   - [Updating and Syncing](#usage--sync)
 - [Uninstalling](#uninstalling)
-- [For Mod Teams: Customizing for Your Project](#for-mod-teams-customizing-for-your-project)
+- [Building the Linux Bundles Yourself](#linux-build)
 - [License](#license)
 
 ---
@@ -109,6 +117,50 @@ The dash prefix "disables" the texture - the emulator ignores it, but the app st
 
 Simply download the new `.dmg` and drag the app to your Applications folder, replacing the old version. Your settings are stored in your user Library folder and will be preserved.
 
+### Linux <a name="installation--linux"></a>
+
+The app uses your system's Git, so install it first if you haven't (`sudo apt install git`, `sudo dnf install git`, or `sudo pacman -S git`).
+
+**AppImage** (any distro):
+
+1. Download the `.AppImage` from the [latest release](../../releases/latest)
+2. Make it executable and run it:
+   ```bash
+   chmod +x Madden*.AppImage
+   ./Madden*.AppImage
+   ```
+   You can also right-click the file, open Properties, tick "Allow executing as program" and double-click it.
+
+AppImages need `libfuse2`, which Ubuntu 22.04 and newer and Debian 12 no longer install by default. If you get `dlopen(): error loading libfuse.so.2`, run `sudo apt install libfuse2` (Ubuntu 24.04: `sudo apt install libfuse2t64`) or start the app with `./Madden*.AppImage --appimage-extract-and-run`. Fedora and SteamOS already have it.
+
+**Debian / Ubuntu**: download the `.deb` and run `sudo apt install ./madden*.deb`.
+**Fedora**: download the `.rpm` and run `sudo dnf install ./madden*.rpm`.
+
+Live download progress uses the `script` command from `util-linux`, which is present on virtually every distro. Without it the install still works, just without percentages.
+
+If the window opens blank, your WebKitGTK build is fighting the GPU driver. The app already sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` for you; if it still happens try `WEBKIT_DISABLE_COMPOSITING_MODE=1 ./Madden*.AppImage`.
+
+#### Steam Deck
+
+Switch to Desktop Mode, download the `.AppImage` to your home folder, then follow the AppImage steps above (SteamOS ships both `git` and `libfuse2`, so nothing needs installing). When the app asks for your PCSX2 textures directory, use the one that matches how you installed PCSX2:
+
+| PCSX2 install | Textures directory |
+|---|---|
+| EmuDeck (internal storage) | `/home/deck/Emulation/storage/pcsx2/textures` |
+| EmuDeck (SD card) | `/run/media/mmcblk0p1/Emulation/storage/pcsx2/textures` |
+| PCSX2 Flatpak from Discover | `/home/deck/.var/app/net.pcsx2.PCSX2/config/PCSX2/textures` |
+| PCSX2 AppImage | `/home/deck/.config/PCSX2/textures` |
+
+PCSX2 shows the exact folder under Settings > Graphics > Texture Replacements. Type or paste the path into the box if the Browse dialog is awkward with the trackpad.
+
+#### Updating the App (Linux)
+
+Download the new `.AppImage`/`.deb`/`.rpm` and replace or reinstall. Your settings live in `~/.local/share/com.madden09deluxe.textures-downloader` and will be preserved.
+
+#### No-app alternative: the shell script
+
+If you'd rather not run a GUI at all, `src/download_textures.sh` does the first-time install from a terminal on Linux or macOS. Copy it into your PCSX2 textures folder and run `./download_textures.sh`, or pass the folder as an argument. Updates afterwards still need the app's Sync tab.
+
 ---
 
 ## Using the App <a name="usage"></a>
@@ -171,6 +223,33 @@ A GitHub Personal Access Token is required for the sync features. Here's how to 
 
 1. Delete the app from Applications
 2. Delete `~/Library/Application Support/com.madden09deluxe.textures-downloader`
+
+#### Uninstalling (Linux)
+
+1. Delete the `.AppImage`, or `sudo apt remove madden-09-deluxe-downloader` / `sudo dnf remove madden-09-deluxe-downloader`
+   (the package is named after the loader you installed, e.g. `madden-12-deluxe-downloader`)
+2. Delete `~/.local/share/com.madden09deluxe.textures-downloader`
+
+---
+
+## Building the Linux Bundles Yourself <a name="linux-build"></a>
+
+CI builds the AppImage, `.deb` and `.rpm` for **every game** on every push, but you can build them on any Linux box with rootless Podman (or Docker) without installing Rust or WebKitGTK on the host:
+
+```bash
+tools/linux-build/build.sh                       # every loader in games/
+tools/linux-build/build.sh --game madden12       # just one
+tools/linux-build/build.sh --game all --bundles "appimage"
+tools/linux-build/build.sh --self-test           # container recipe, manifests, and CI coverage
+```
+
+Each game lands in its own `build-output/<game>/` with the bundles, a rendered
+`download_textures.sh` and a `SHA256SUMS`. Switching games edits nothing: `GAME`
+selects the constants that `src-tauri/build.rs` and `vite.config.ts` read from
+[`games/<id>/game.json`](games/), and `--config games/<id>/tauri.conf.json` gives the
+bundle its name and identifier. See [`games/README.md`](games/README.md) to add a loader.
+
+The container is an Ubuntu 22.04 image with the same packages as the CI job, so a local build matches what the release workflow produces.
 
 ---
 

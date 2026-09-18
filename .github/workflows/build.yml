@@ -7,18 +7,38 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# One loader per folder under games/, one build per game and platform. Nothing in
+# the source tree names a game: GAME picks the constants (src-tauri/build.rs and
+# vite.config.ts read games/<id>/game.json) and --config supplies the bundle's name,
+# identifier and window title. Adding a game means adding a folder and one line here.
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate game manifests
+        run: |
+          python3 tools/games.py --self-test
+          python3 tools/games.py validate
+
   build:
+    needs: validate
     strategy:
       fail-fast: false
       matrix:
+        game: [madden04, madden05, madden09, madden12]
+        platform: [macos-latest, windows-latest, ubuntu-22.04]
         include:
           - platform: macos-latest
             args: --target universal-apple-darwin
           - platform: windows-latest
             args: ""
+          - platform: ubuntu-22.04
+            args: --bundles deb rpm appimage
 
     runs-on: ${{ matrix.platform }}
+    env:
+      GAME: ${{ matrix.game }}
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +55,12 @@ jobs:
         run: |
           rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
+      - name: Install dependencies (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+
       - name: Install frontend dependencies
         run: npm install
 
@@ -42,14 +68,19 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GAME: ${{ matrix.game }}
         with:
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} --config ${{ github.workspace }}/games/${{ matrix.game }}/tauri.conf.json
+
+      - name: Render the no-GUI installer script (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: python3 tools/games.py render ${{ matrix.game }} src/download_textures.sh.in src-tauri/target/release/bundle/download_textures.sh
 
       - name: Upload artifacts (macOS)
         if: matrix.platform == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: macos-build
+          name: macos-${{ matrix.game }}
           path: |
             src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
             src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
@@ -58,7 +89,18 @@ jobs:
         if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: windows-portable
+          name: windows-portable-${{ matrix.game }}
           path: |
             src-tauri/target/release/*.exe
             src-tauri/target/release/resources/
+
+      - name: Upload artifacts (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.game }}
+          path: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/rpm/*.rpm
+            src-tauri/target/release/bundle/download_textures.sh
