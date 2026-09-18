@@ -72,6 +72,14 @@ jobs:
         with:
           args: ${{ matrix.args }} --config ${{ github.workspace }}/games/${{ matrix.game }}/tauri.conf.json
 
+      - name: Remove bundled wayland libraries from the AppImage (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          find src-tauri/target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' -print0 \
+            | xargs -0 -r tools/linux-build/strip-bundled-wayland.sh
+          find src-tauri/target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' -print0 \
+            | xargs -0 -r tools/linux-build/strip-bundled-wayland.sh --check
+
       - name: Render the no-GUI installer script (Linux)
         if: matrix.platform == 'ubuntu-22.04'
         run: python3 tools/games.py render ${{ matrix.game }} src/download_textures.sh.in src-tauri/target/release/bundle/download_textures.sh
