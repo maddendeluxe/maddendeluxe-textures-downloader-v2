@@ -31,6 +31,8 @@ self_test() {
         if grep -q -- "$pkg" "$HERE/Containerfile"; then echo "ok   Containerfile has $pkg"
         else echo "FAIL Containerfile missing CI package $pkg"; fail=1; fi
     done
+    if "$HERE/strip-bundled-wayland.sh" --self-test >/dev/null 2>&1; then echo "ok   strip-bundled-wayland self-test"
+    else echo "FAIL strip-bundled-wayland --self-test"; fail=1; fi
     # Every game must be buildable: a manifest, a Tauri override, and the two agreeing.
     if python3 "$ROOT/tools/games.py" validate >/dev/null 2>&1; then echo "ok   games.py validate"
     else echo "FAIL games.py validate (run it for the reason)"; fail=1; fi
@@ -111,6 +113,10 @@ for GAME in $GAMES; do
     shopt -s nullglob
     for f in "$OUT"/*\ *; do mv -- "$f" "${f// /}"; done
     shopt -u nullglob
+    # Tauri's AppImage ships the build image's libwayland, which makes the webview fail
+    # to start on a Wayland desktop -- a window that never paints. Fix the copy we ship.
+    find "$OUT" -maxdepth 1 -name '*.AppImage' -print0 | xargs -0 -r "$HERE/strip-bundled-wayland.sh"
+    find "$OUT" -maxdepth 1 -name '*.AppImage' -print0 | xargs -0 -r "$HERE/strip-bundled-wayland.sh" --check
     python3 tools/games.py render "$GAME" src/download_textures.sh.in "$OUT/download_textures.sh"
     ( cd "$OUT" && sha256sum ./* > SHA256SUMS )
     echo "-- $GAME bundles in build-output/$GAME:"
