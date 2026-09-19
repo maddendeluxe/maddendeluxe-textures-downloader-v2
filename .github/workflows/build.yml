@@ -21,6 +21,18 @@ jobs:
           python3 tools/games.py --self-test
           python3 tools/games.py validate
 
+      # A checkout on a Windows drive has core.filemode=false, so a chmod there never
+      # reaches git; the Linux jobs then fail with exit 126 "Permission denied" at the
+      # first script they run directly. Catch it here, before anything is built.
+      - name: Scripts under tools/ must be executable in git
+        run: |
+          bad="$(git ls-files --stage tools | awk '$1 != "100755" && $4 ~ /\.(sh|py)$/ {print $4}')"
+          if [ -n "$bad" ]; then
+            echo "not executable in git (fix: git update-index --chmod=+x <file>):"
+            echo "$bad"
+            exit 1
+          fi
+
   build:
     needs: validate
     strategy:
@@ -76,9 +88,9 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           find src-tauri/target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' -print0 \
-            | xargs -0 -r tools/linux-build/strip-bundled-wayland.sh
+            | xargs -0 -r bash tools/linux-build/strip-bundled-wayland.sh
           find src-tauri/target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' -print0 \
-            | xargs -0 -r tools/linux-build/strip-bundled-wayland.sh --check
+            | xargs -0 -r bash tools/linux-build/strip-bundled-wayland.sh --check
 
       - name: Render the no-GUI installer script (Linux)
         if: matrix.platform == 'ubuntu-22.04'

@@ -57,6 +57,19 @@ interface SyncTabProps {
 }
 
 // Format ISO date string to human-readable format
+const TOKEN_URL =
+  "https://github.com/settings/personal-access-tokens/new?name=Textures+Downloader&description=Token+for+syncing+textures&expires_in=365";
+
+// A plain target="_blank" link does nothing inside the Tauri webview: there is no
+// browser to open a tab in, so the click was silently dropped. Hand the URL to the
+// system browser through the opener plugin, exactly as the header's repository link does.
+const openTokenPage = (e: React.MouseEvent) => {
+  e.preventDefault();
+  import("@tauri-apps/plugin-opener").then(({ openUrl }) => {
+    openUrl(TOKEN_URL);
+  });
+};
+
 function formatDate(isoDate: string | null): string {
   if (!isoDate) return "Unknown";
   try {
@@ -296,10 +309,9 @@ function SyncTab({
             <p className="text-xs text-zinc-500">
               Required. A free GitHub.com account is needed.
               <a
-                href="https://github.com/settings/personal-access-tokens/new?name=Textures+Downloader&description=Token+for+syncing+textures&expires_in=365"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 ml-1"
+                href={TOKEN_URL}
+                onClick={openTokenPage}
+                className="text-blue-400 hover:text-blue-300 ml-1 cursor-pointer"
               >
                 Generate fine-grained token
               </a>
@@ -451,10 +463,9 @@ function SyncTab({
         <div className="p-3 bg-yellow-900/30 border border-yellow-700 rounded text-yellow-300 text-sm">
           A GitHub API key is required for syncing.{" "}
           <a
-            href="https://github.com/settings/personal-access-tokens/new?name=Textures+Downloader&description=Token+for+syncing+textures&expires_in=365"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 underline"
+            href={TOKEN_URL}
+            onClick={openTokenPage}
+            className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
           >
             Click here to generate an API token
           </a>
