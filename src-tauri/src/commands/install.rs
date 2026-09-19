@@ -30,12 +30,13 @@ pub fn cleanup_processes() {
                 // On Linux the runner gives the wrapper its own process group
                 // (see run_git_with_pty), so kill the group first; then the pid
                 // itself, which is all macOS's caffeinate needs.
-                let _ = Command::new("kill")
-                    .args(["-9", "--", &format!("-{}", pid)])
-                    .output();
-                let _ = Command::new("kill")
-                    .args(["-9", &pid.to_string()])
-                    .output();
+                let mut group = Command::new("kill");
+                use_system_libraries(&mut group);
+                let _ = group.args(["-9", "--", &format!("-{}", pid)]).output();
+
+                let mut single = Command::new("kill");
+                use_system_libraries(&mut single);
+                let _ = single.args(["-9", &pid.to_string()]).output();
             }
         }
     }
@@ -105,8 +106,12 @@ fn get_git_path() -> Result<String, String> {
 
     #[cfg(not(target_os = "windows"))]
     {
-        // On macOS/Linux, check for system git
-        if Command::new("git").arg("--version").output().is_ok() {
+        // On macOS/Linux, check for system git. Probe it the same way it will be run:
+        // inside an AppImage the bundled libraries would otherwise be on its path, and a
+        // git that cannot start looks exactly like a git that is not installed.
+        let mut probe = Command::new("git");
+        use_system_libraries(&mut probe);
+        if probe.arg("--version").output().is_ok() {
             return Ok("git".to_string());
         }
 
@@ -292,7 +297,9 @@ fn run_git_with_pty(
     let mut cmd_args: Vec<&str> = vec!["-d", "script", "-q", "/dev/null", git_path];
     cmd_args.extend(args);
 
-    let mut cmd = Command::new("caffeinate")
+    let mut caffeinate = Command::new("caffeinate");
+    use_system_libraries(&mut caffeinate);
+    let mut cmd = caffeinate
         .args(&cmd_args)
         .current_dir(working_dir)
         .stdout(Stdio::piped())
@@ -320,6 +327,26 @@ fn run_git_with_pty(
     Ok((status.success(), error_context))
 }
 
+/// Let a system binary see the system's libraries, not the AppImage's.
+///
+/// An AppImage exports `LD_LIBRARY_PATH` pointing at its own bundled libraries, and every
+/// process it starts inherits it. `git` is a system binary: on a distribution whose
+/// libcurl is newer than the bundled OpenSSL, `git-remote-https` dies with
+/// "version `OPENSSL_3.2.0' not found (required by /usr/lib/libcurl.so.4)" and the clone
+/// fails before a byte is transferred. Confirmed on a Steam Deck (SteamOS 3.8.16,
+/// git 2.50.1) on 2026-09-18, where `git --version` still worked -- only a real clone
+/// reaches the HTTPS helper. The same leak made `systemd-inhibit` fail there.
+///
+/// Harmless outside an AppImage, where these variables are normally unset, so it is
+/// applied on macOS too rather than kept as a Linux special case.
+#[cfg(not(target_os = "windows"))]
+fn use_system_libraries(cmd: &mut Command) {
+    cmd.env_remove("LD_LIBRARY_PATH");
+    cmd.env_remove("LD_PRELOAD");
+    cmd.env_remove("PERLLIB"); // git's perl subcommands
+    cmd.env_remove("PYTHONPATH");
+}
+
 /// Quote a string for use inside a POSIX shell command line
 #[cfg(target_os = "linux")]
 fn shell_quote(s: &str) -> String {
@@ -344,14 +371,21 @@ fn run_git_with_pty(
     default_stage: &str,
     detect_stages: bool,
 ) -> Result<(bool, String), String> {
-    let have_script = Command::new("script").arg("--version").output().is_ok();
+    let have_script = {
+        let mut c = Command::new("script");
+        use_system_libraries(&mut c);
+        c.arg("--version").output().is_ok()
+    };
     // Probe by actually taking a lock: `--list` can succeed on systems where
     // taking one is denied (containers, WSL, no logind session).
-    let have_inhibit = Command::new("systemd-inhibit")
-        .args(["--what=idle:sleep", "--who=Textures Downloader", "--why=probe", "true"])
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
+    let have_inhibit = {
+        let mut c = Command::new("systemd-inhibit");
+        use_system_libraries(&mut c);
+        c.args(["--what=idle:sleep", "--who=Textures Downloader", "--why=probe", "true"])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    };
 
     let git_cmdline = std::iter::once(git_path)
         .chain(args.iter().copied())
@@ -379,6 +413,10 @@ fn run_git_with_pty(
         c.args(args);
         c
     };
+
+    // git, script and systemd-inhibit are all system binaries: none of them must load
+    // the libraries this AppImage carries.
+    use_system_libraries(&mut cmd);
 
     // Put the wrapper in its own process group so closing the app mid-download can
     // kill the whole group at once. This fully cleans up the no-`script` fallback

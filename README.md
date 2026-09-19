@@ -251,6 +251,18 @@ bundle its name and identifier. See [`games/README.md`](games/README.md) to add 
 
 The container is an Ubuntu 22.04 image with the same packages as the CI job, so a local build matches what the release workflow produces.
 
+**If you build the AppImage by hand** with `npx tauri build`, run the post-processing step
+afterwards:
+
+```bash
+tools/linux-build/strip-bundled-wayland.sh src-tauri/target/release/bundle/appimage/*.AppImage
+```
+
+The bundler copies the build machine's `libwayland-*` into the AppImage. On a Wayland
+desktop those clash with the user's own Mesa driver, EGL refuses the display and the window
+opens but never paints. `build.sh` and CI do this for you; a hand-rolled `tauri build` does
+not. `--check` on the same script fails if any are still bundled.
+
 ---
 
 ## License <a name="license">
