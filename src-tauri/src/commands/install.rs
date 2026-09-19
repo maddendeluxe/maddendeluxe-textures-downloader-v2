@@ -30,12 +30,13 @@ pub fn cleanup_processes() {
                 // On Linux the runner gives the wrapper its own process group
                 // (see run_git_with_pty), so kill the group first; then the pid
                 // itself, which is all macOS's caffeinate needs.
-                let _ = Command::new("kill")
-                    .args(["-9", "--", &format!("-{}", pid)])
-                    .output();
-                let _ = Command::new("kill")
-                    .args(["-9", &pid.to_string()])
-                    .output();
+                let mut group = Command::new("kill");
+                use_system_libraries(&mut group);
+                let _ = group.args(["-9", "--", &format!("-{}", pid)]).output();
+
+                let mut single = Command::new("kill");
+                use_system_libraries(&mut single);
+                let _ = single.args(["-9", &pid.to_string()]).output();
             }
         }
     }
@@ -296,7 +297,9 @@ fn run_git_with_pty(
     let mut cmd_args: Vec<&str> = vec!["-d", "script", "-q", "/dev/null", git_path];
     cmd_args.extend(args);
 
-    let mut cmd = Command::new("caffeinate")
+    let mut caffeinate = Command::new("caffeinate");
+    use_system_libraries(&mut caffeinate);
+    let mut cmd = caffeinate
         .args(&cmd_args)
         .current_dir(working_dir)
         .stdout(Stdio::piped())
