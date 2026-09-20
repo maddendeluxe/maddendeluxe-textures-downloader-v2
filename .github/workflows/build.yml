@@ -14,6 +14,7 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Validate game manifests
@@ -24,6 +25,22 @@ jobs:
       # A checkout on a Windows drive has core.filemode=false, so a chmod there never
       # reaches git; the Linux jobs then fail with exit 126 "Permission denied" at the
       # first script they run directly. Catch it here, before anything is built.
+      # Every bundle so far called itself 2.0.0, including the ones with the blank
+      # window and the ones that could not download, because tauri.conf.json (which
+      # names the bundle file) had drifted from Cargo.toml and package.json. A bug
+      # report then names a version that several different binaries share.
+      - name: The version strings must agree
+        run: |
+          python3 tools/check-versions.py --self-test
+          python3 tools/check-versions.py
+
+      # The runtime test below drives the app's --diagnose-open, which never starts the
+      # webview, so it cannot see the UI going back to the opener plugin. Guard that here.
+      - name: Links must go through the guarded command, not the opener plugin
+        run: |
+          python3 tools/linux-build/check-appimage-opener.py --self-test
+          python3 tools/linux-build/check-appimage-opener.py --source
+
       - name: Scripts under tools/ must be executable in git
         run: |
           bad="$(git ls-files --stage tools | awk '$1 != "100755" && $4 ~ /\.(sh|py)$/ {print $4}')"
@@ -49,6 +66,7 @@ jobs:
             args: --bundles deb rpm appimage
 
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 45
     env:
       GAME: ${{ matrix.game }}
     steps:
@@ -91,6 +109,17 @@ jobs:
             | xargs -0 -r bash tools/linux-build/strip-bundled-wayland.sh
           find src-tauri/target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' -print0 \
             | xargs -0 -r bash tools/linux-build/strip-bundled-wayland.sh --check
+
+      # Links did nothing on SteamOS for three releases. AppRun puts $APPDIR/usr/bin
+      # first on PATH, so the AppImage ran its OWN xdg-open (xdg-utils 1.1.3 from the
+      # jammy build image, which knows KDE 4 and 5 only: on Plasma 6 it did nothing and
+      # exited 0), and AppRun's XDG_DATA_DIRS left /usr/share ahead of the Flatpak
+      # exports, so a stub "Install Firefox" .desktop won over the real browser. Neither
+      # shows up in source review or a unit test, only in what the packaged binary hands
+      # a real child process. So run the real AppImage against a stand-in opener.
+      - name: The AppImage must open links through the system opener (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: python3 tools/linux-build/check-appimage-opener.py src-tauri/target/release/bundle/appimage
 
       - name: Render the no-GUI installer script (Linux)
         if: matrix.platform == 'ubuntu-22.04'
