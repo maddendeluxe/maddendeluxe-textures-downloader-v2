@@ -1,3 +1,5 @@
+import { openExternal } from "../openExternal";
+
 interface AppOutdatedModalProps {
   currentVersion: string;
   requiredVersion: string;
@@ -6,10 +8,7 @@ interface AppOutdatedModalProps {
 
 function AppOutdatedModal({ currentVersion, requiredVersion, downloaderAppUrl }: AppOutdatedModalProps) {
   const handleOpenDownloadPage = () => {
-    // Use Tauri's shell opener to open the URL
-    import("@tauri-apps/plugin-opener").then(({ openUrl }) => {
-      openUrl(downloaderAppUrl);
-    });
+    void openExternal(downloaderAppUrl);
   };
 
   return (

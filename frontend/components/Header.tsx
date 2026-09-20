@@ -1,4 +1,5 @@
 import { APP_TITLE, REPO_NAME, REPO_URL, TARGET_FOLDER } from "../config";
+import { openExternal } from "../openExternal";
 
 interface HeaderProps {
   version?: string;
@@ -7,9 +8,7 @@ interface HeaderProps {
 function Header({ version }: HeaderProps) {
   const handleRepoClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    import("@tauri-apps/plugin-opener").then(({ openUrl }) => {
-      openUrl(REPO_URL);
-    });
+    void openExternal(REPO_URL);
   };
 
   return (

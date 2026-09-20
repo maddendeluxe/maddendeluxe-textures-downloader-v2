@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { openExternal } from "../openExternal";
 import SyncProgress from "./SyncProgress";
 import SyncWarningDialog from "./SyncWarningDialog";
 
@@ -62,12 +63,10 @@ const TOKEN_URL =
 
 // A plain target="_blank" link does nothing inside the Tauri webview: there is no
 // browser to open a tab in, so the click was silently dropped. Hand the URL to the
-// system browser through the opener plugin, exactly as the header's repository link does.
+// system browser, exactly as the header's repository link does.
 const openTokenPage = (e: React.MouseEvent) => {
   e.preventDefault();
-  import("@tauri-apps/plugin-opener").then(({ openUrl }) => {
-    openUrl(TOKEN_URL);
-  });
+  void openExternal(TOKEN_URL);
 };
 
 function formatDate(isoDate: string | null): string {
