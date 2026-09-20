@@ -13,7 +13,8 @@ switch games and all of them can be built at once.
 | Madden 09 Deluxe | [madden09deluxe](https://github.com/maddendeluxe/madden09deluxe) | `SLUS-21770` |
 | Madden 12 Deluxe | [madden12deluxe](https://github.com/maddendeluxe/madden12deluxe) | `SLUS-21946` |
 
-Releases: [maddendeluxe-textures-downloader-v2](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/tag/release)
+
+# Download Links
 
 | Game | Windows | MacOS | Linux |
 | ------------- | ------------- | ------------- | ------------- |
@@ -21,6 +22,8 @@ Releases: [maddendeluxe-textures-downloader-v2](https://github.com/maddendeluxe/
 | Madden 05 Deluxe | Windows | MacOS | Linux |
 | Madden 09 Deluxe |[Windows](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/download/v2.0.1/Madden.09.Deluxe.Texture.Downloader.Tool.v2.0.1.WINDOWS.zip)| [MacOS](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/download/v2.0.1/Madden.09.Deluxe.Texture.Downloader.Tool.v2.0.1.MACOS.zip) | [Linux](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/download/v2.0.6/linux-madden09.texturedownloader.zip) |
 | Madden 12 Deluxe | [Windows](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/download/v2.0.1/Madden.12.Deluxe.Texture.Downloader.Tool.v2.0.1.WINDOWS.zip) | [MacOS](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/download/v2.0.1/Madden.12.Deluxe.Texture.Downloader.Tool.v2.0.1.MACOS.zip) | [Linux](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/download/v2.0.6/linux-madden12.texturedownloader.zip) |
+
+Releases: [maddendeluxe-textures-downloader-v2](https://github.com/maddendeluxe/maddendeluxe-textures-downloader-v2/releases/tag/release)
 
 ## Table of Contents
 - [Features](#features)
