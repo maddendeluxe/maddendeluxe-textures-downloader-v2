@@ -2870,7 +2870,7 @@ dependencies = [
 
 [[package]]
 name = "ps2-textures-downloader"
-version = "2.0.2"
+version = "2.0.6"
 dependencies = [
  "chrono",
  "conpty",

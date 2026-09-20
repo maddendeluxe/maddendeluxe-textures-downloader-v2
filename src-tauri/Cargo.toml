@@ -1,6 +1,6 @@
 [package]
 name = "ps2-textures-downloader"
-version = "2.0.2"
+version = "2.0.6"
 description = "Download and sync PS2 texture packs; the game is chosen at build time by GAME (see games/)"
 authors = ["JD6-37"]
 edition = "2021"

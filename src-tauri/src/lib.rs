@@ -14,10 +14,33 @@ use commands::{
     analyze_full_sync, execute_analyzed_sync,
     // App info
     get_app_version, fetch_installer_data, compare_versions,
+    // Opening links in the system browser
+    open_external,
+    // Debug log (~/textures-downloader-debug.log)
+    frontend_log, get_debug_log_path,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Everything below is recorded in ~/textures-downloader-debug.log, so a bug report
+    // from a machine we cannot reach comes with its own evidence.
+    commands::debug_log::start_session(env!("CARGO_PKG_VERSION"));
+
+    // `--diagnose-open [url]`: try every way of opening a link, one after another,
+    // without starting the window. Run from a terminal; see open_external.rs.
+    #[cfg(target_os = "linux")]
+    {
+        let args: Vec<String> = std::env::args().collect();
+        if let Some(at) = args.iter().position(|a| a == "--diagnose-open") {
+            let url = args.get(at + 1).cloned().unwrap_or_else(|| "https://github.com/".to_string());
+            commands::diagnose_all(&url);
+            println!("Log written to {}", commands::debug_log::log_path().display());
+            return;
+        }
+        // What this desktop can open links with, recorded before anyone clicks one.
+        std::thread::spawn(commands::survey);
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -52,6 +75,11 @@ pub fn run() {
             get_app_version,
             fetch_installer_data,
             compare_versions,
+            // Opening links in the system browser
+            open_external,
+            // Debug log
+            frontend_log,
+            get_debug_log_path,
         ])
         .on_window_event(|_window, event| {
             if let tauri::WindowEvent::Destroyed = event {
